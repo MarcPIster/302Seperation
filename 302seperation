@@ -1,0 +1,162 @@
+#!/usr/bin/python3
+
+import sys
+import math
+
+def readFile(path):
+    try:
+        file = open(path, 'r', encoding='utf-8')
+    except:
+        sys.stderr.write("Can't open this file " + path)
+        sys.exit(84)
+    content = file.read().splitlines()
+    file.close()
+    return content
+
+def tupelToNameList(arr):
+    nameList = []
+    for name in arr:
+        if name[0] not in nameList:
+            nameList.append(name[0])
+        if name[1] not in nameList:
+            nameList.append(name[1])
+    nameList.sort(key=lambda tup: tup)
+    return nameList
+
+def calculateShortestWay(adjMatrix, nameList, delimiter):
+    shortestArr = adjMatrix.copy()
+    length = len(nameList)
+    x = 0
+    y = 0
+
+    for k in range(0, length):
+        x = shortestArr[k]
+        y = [i[k] for i in shortestArr]
+        for yLine in range(0, length):
+            for xLine in range(0, length):
+                if k == yLine:
+                    break
+                elif k == xLine or x[xLine] == 100000 or y[yLine] == 100000 or xLine == yLine:
+                    continue
+                toCheck = x[xLine] + y[yLine]
+
+                if delimiter == -1:
+                    if shortestArr[yLine][xLine] > toCheck:
+                        shortestArr[yLine][xLine] = toCheck
+                elif shortestArr[yLine][xLine] > toCheck and toCheck <= delimiter:
+                    shortestArr[yLine][xLine] = toCheck
+    return shortestArr
+
+def listIntoTupel(arr):
+    newList = []
+    for line in arr:
+        tmpFirstName = []
+        tmpSecoundName = []
+        check = 0
+        lines = line.split(' ')
+        for words in lines:
+            if (words == 'is'):
+                break
+            tmpFirstName.append(words)
+        for words in lines:
+            if (check == 1):
+                tmpSecoundName.append(words)
+            if (words == 'with'):
+                check = 1
+        newList.append((" ".join(tmpFirstName), " ".join(tmpSecoundName)))
+    return newList
+
+def calculateAdjMatrix(arr, nameList):
+    adjMatrix = []
+    for firstNameInd in range(0, len(nameList)):
+        tmpArr = [100000] * len(nameList)
+        for secoundNameInd in range(0, len(nameList)):
+            for tupel in arr:
+                if (tupel[0] == nameList[firstNameInd] and tupel[1] == nameList[secoundNameInd]):
+                    tmpArr[secoundNameInd] = 1
+                elif (tupel[0] == nameList[secoundNameInd] and tupel[1] == nameList[firstNameInd]):
+                    tmpArr[secoundNameInd] = 1
+        adjMatrix.append(tmpArr)
+    return adjMatrix
+
+def usage():
+    print("USAGE")
+    print("\t./seperation file [n | p1 p2]")
+    print("DESCRIPTION")
+    print("\tfile\tfile that contains the list of Facebook connections")
+    print("\tn\tmaximum length of the paths")
+    print("\tp1\tname of someone in the file")
+    sys.exit(0)
+
+def main(argv):
+    arguments = len(argv)
+    if (argv[1] == "-h"):
+        usage()
+        sys.exit(84)
+    if (arguments != 3 and arguments != 4):
+        sys.stderr.write("Try ./302seperation -h for more information")
+        sys.exit(84)
+
+    arr = readFile(argv[1])
+    arr = listIntoTupel(arr)
+    nameList = tupelToNameList(arr)
+    adjacencyMatrix = calculateAdjMatrix(arr, nameList)
+    if (arguments == 4):
+        shortestMatrix = calculateShortestWay(adjacencyMatrix, nameList, -1)
+        name1 = argv[2]
+        name2 = argv[3]
+        name1Ind = 0
+        name2Ind = 0
+
+        if name1 not in nameList or name2 not in nameList:
+            print("Degree of separation between " + argv[2] + " and " + argv[3] + ": -1")
+        else:
+            for i in range(0, len(nameList)):
+                if name1 == nameList[i]:
+                    name1Ind = i
+                if name2 == nameList[i]:
+                    name2Ind = i
+            if adjacencyMatrix[name1Ind][name2Ind] == 100000:
+                print("Degree of separation between " + argv[2] + " and " + argv[3] + ": 0")
+            else:
+                print("Degree of separation between " + argv[2] + " and " + argv[3] + ": " + str(adjacencyMatrix[name1Ind][name2Ind]))
+    else:
+        try:
+            x = int(argv[2])
+            if x <= 0:
+                exit()
+        except:
+            sys.stderr.write("Number must be positive!")
+            sys.exit(84)
+
+        for name in nameList:
+            print(name)
+        print("")
+        for row in adjacencyMatrix:
+            for ind in range(0, len(row)):
+                if row[ind] == 100000:
+                    print("0", end="")
+                else:
+                    print(str(row[ind]), end="")
+
+                if ind != len(row) - 1:
+                    print(" ", end="")
+            print("")
+        print("")
+        shortestMatrix = calculateShortestWay(adjacencyMatrix, nameList, int(argv[2]))
+        for indy in range(0, len(shortestMatrix)):
+            for ind in range(0, len(shortestMatrix)):
+                if (shortestMatrix[indy][ind] == 100000):
+                    print("0", end="")
+                else:
+                    print(str(shortestMatrix[indy][ind]), end="")
+
+                if ind != len(shortestMatrix) - 1:
+                    print(" ", end="")
+            print("")
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv)
+    except:
+        sys.exit(84)
